@@ -1,0 +1,232 @@
+---
+title: "Writing functions"
+author: "Amin Yakubu"
+date: "10/25/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+```{r}
+x = rnorm(25, mean = 5, sd = 3)
+
+(x - mean(x)) / sd(x)
+```
+
+Write a function to compute z scores for a vector
+
+```{r}
+z_scores = function(x){
+  
+  (x - mean(x)) / sd(x)
+}
+```
+
+Check to see if it works...
+
+```{r}
+y = runif(100)
+
+z_scores(y)
+
+## Same as above 
+unif_sample = runif(100)
+
+z_scores(x = unif_sample)
+```
+
+
+Check some other examples 
+
+```{r, error = TRUE}
+
+z_scores(3)
+
+z_scores("my name is amin")
+
+z_scores(iris)
+
+z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
+```
+
+Put in some checks on inputs...
+
+
+```{r}
+z_scores = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+  (x - mean(x)) / sd(x)
+
+}
+```
+
+```{r, error = TRUE}
+
+z_scores(3)
+
+z_scores("my name is amin")
+
+z_scores(iris)
+
+z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
+```
+
+
+### mean and sd
+
+```{r}
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+ mean_x = mean(x)
+ sd_x = sd(x)
+ 
+ c(mean_x, sd_x)
+
+}
+
+mean_and_sd(unif_sample)
+```
+
+Putting the resutls in a tibble instead
+
+```{r}
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+tibble(
+ mean_x = mean(x),
+ sd_x = sd(x)
+ )
+
+}
+
+mean_and_sd(unif_sample)
+```
+
+## Multiple inputs
+
+Look at simple linear regression!
+
+```{r}
+sim_data = tibble(
+  x = rnorm(30, 1, 1),
+  y = 2 + 3 * x + rnorm(30, 0, 1)
+)
+
+ls_fit = lm(y ~ x, data = sim_data)
+
+beta0_hat = coef(ls_fit)[1]
+beta1_hat = coef(ls_fit)[2]
+```
+
+Write a function that simulates data, fits the model, and returns the estimates. Inputs are sample size and true coefficients.
+
+```{r}
+sim_regression = function(n, beta0 = 2, beta1 = 3) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = 1, sd = 1),
+    y = beta0 + beta1 * x + rnorm(n, 0, 1)
+  )
+  
+  ls_fit = lm(y ~ x, data = sim_data)
+  
+  tibble(
+    beta0_hat = coef(ls_fit)[1],
+    beta1_hat = coef(ls_fit)[2]
+  )
+}
+```
+
+```{r}
+sim_regression(n = 30, beta0 = 0, beta1 = -1)
+
+sim_regression(n = 300)
+```
+
+Scrapping Amazon
+
+```{r, eval = FALSE}
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html = read_html(url)
+
+review_titles = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-title") %>%
+  html_text()
+
+review_stars = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-rating") %>%
+  html_text()
+
+review_text = dynamite_html %>%
+    html_nodes(".review-data:nth-child(4)") %>%
+    html_text()
+
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
+)
+```
+
+We can use functions if we wanted multiple pages
+
+```{r, eval = FALSE}
+
+extract_reviews = function(url){
+dynamite_html = read_html(url)
+
+review_titles = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-title") %>%
+  html_text()
+
+review_stars = dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-rating") %>%
+  html_text()
+
+review_text = dynamite_html %>%
+    html_nodes(".review-data:nth-child(4)") %>%
+    html_text()
+
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
+)
+  reviews
+}
+
+```
+
+
+
+
+
+
+
+
