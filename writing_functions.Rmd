@@ -5,6 +5,7 @@ date: "10/25/2018"
 output: html_document
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -15,77 +16,54 @@ library(rvest)
 ```
 
 ```{r}
-x = rnorm(25, mean = 5, sd = 3)
+x = rnorm(25, 5, 3)
 
-(x - mean(x)) / sd(x)
+(x - mean(x))/sd(x)
 ```
 
-Write a function to compute z scores for a vector
+Function
+
+```{r}
+z_scores = function(x){
+  z = (x - mean(x))/sd(x)
+  z
+}
+```
+
+```{r}
+z_scores(x)
+```
+
+```{r}
+y = rnorm(10, 5, 2)
+
+z_scores(y)
+
+z_scores(5)
+z_scores("Amin")
+z_scores(iris)
+
+z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
+```
+
+Adding checks!
 
 ```{r}
 z_scores = function(x){
   
-  (x - mean(x)) / sd(x)
-}
-```
-
-Check to see if it works...
-
-```{r}
-y = runif(100)
-
-z_scores(y)
-
-## Same as above 
-unif_sample = runif(100)
-
-z_scores(x = unif_sample)
-```
-
-
-Check some other examples 
-
-```{r, error = TRUE}
-
-z_scores(3)
-
-z_scores("my name is amin")
-
-z_scores(iris)
-
-z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
-```
-
-Put in some checks on inputs...
-
-
-```{r}
-z_scores = function(x) {
-  
-  if (!is.numeric(x)) {
+  if (!is.numeric(x)){
     stop("Argument x should be numeric")
-  } else if (length(x) == 1) {
-    stop("Z scores cannot be computed for length 1 vectors")
+  } else if (length(x) == 1){
+    stop("z scores cannot be computed for length 1 vectors")
   }
   
-  (x - mean(x)) / sd(x)
-
+  z = (x - mean(x))/sd(x)
+  
+  z
 }
 ```
 
-```{r, error = TRUE}
-
-z_scores(3)
-
-z_scores("my name is amin")
-
-z_scores(iris)
-
-z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
-```
-
-
-### mean and sd
+We can return lists
 
 ```{r}
 mean_and_sd = function(x) {
@@ -93,84 +71,80 @@ mean_and_sd = function(x) {
   if (!is.numeric(x)) {
     stop("Argument x should be numeric")
   } else if (length(x) == 1) {
-    stop("Z scores cannot be computed for length 1 vectors")
+    stop("z scores cannot be computed for length 1 vectors")
   }
   
- mean_x = mean(x)
- sd_x = sd(x)
- 
- c(mean_x, sd_x)
+  mean_x = mean(x)
+  sd_x = sd(x)
+  
+  list(mean = mean_x, sd = sd_x)
 
 }
-
-mean_and_sd(unif_sample)
 ```
 
-Putting the resutls in a tibble instead
+```{r}
+mean_and_sd(x)
+```
+
+We can also store the values in a tibble
 
 ```{r}
-mean_and_sd = function(x) {
+mean_and_sd = function(x){
   
   if (!is.numeric(x)) {
     stop("Argument x should be numeric")
   } else if (length(x) == 1) {
-    stop("Z scores cannot be computed for length 1 vectors")
+    stop("z scores cannot be computed for length 1 vectors")
   }
   
-tibble(
- mean_x = mean(x),
- sd_x = sd(x)
- )
+  mean_x = mean(x)
+  sd_x = sd(x)
+  
+  tibble(mean = mean_x,
+         sd = sd(x))
 
 }
-
-mean_and_sd(unif_sample)
 ```
 
-## Multiple inputs
-
-Look at simple linear regression!
+Multiple inputs
 
 ```{r}
 sim_data = tibble(
-  x = rnorm(30, 1, 1),
+  x = rnorm(30, mean = 1, sd = 1),
   y = 2 + 3 * x + rnorm(30, 0, 1)
 )
 
-ls_fit = lm(y ~ x, data = sim_data)
+ls_fit = lm(data = sim_data, y ~ x)
 
 beta0_hat = coef(ls_fit)[1]
 beta1_hat = coef(ls_fit)[2]
+
+ggplot(sim_data, aes(x = x, y = y)) + geom_point()
 ```
 
-Write a function that simulates data, fits the model, and returns the estimates. Inputs are sample size and true coefficients.
+We can write a function to do this
+
 
 ```{r}
-sim_regression = function(n, beta0 = 2, beta1 = 3) {
+sim_regression = function(n = 30, beta0, beta1){
   
   sim_data = tibble(
-    x = rnorm(n, mean = 1, sd = 1),
+    x = rnorm(n, 1, 1),
     y = beta0 + beta1 * x + rnorm(n, 0, 1)
   )
+    ls_fit = lm(data = sim_data, y ~ x)
   
-  ls_fit = lm(y ~ x, data = sim_data)
+  beta0_hat = coef(ls_fit)[1]
+  beta1_hat = coef(ls_fit)[2]
   
-  tibble(
-    beta0_hat = coef(ls_fit)[1],
-    beta1_hat = coef(ls_fit)[2]
-  )
+  list(intercept = beta0_hat,
+       beta = beta1_hat)
 }
 ```
 
+Scrapping amazon
+
 ```{r}
-sim_regression(n = 30, beta0 = 0, beta1 = -1)
-
-sim_regression(n = 300)
-```
-
-Scrapping Amazon
-
-```{r, eval = FALSE}
 url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
 
 dynamite_html = read_html(url)
@@ -194,13 +168,10 @@ reviews = tibble(
 )
 ```
 
-We can use functions if we wanted multiple pages
-
-```{r, eval = FALSE}
-
-extract_reviews = function(url){
-dynamite_html = read_html(url)
-
+```{r}
+read_reviews = function(url){
+  dynamite_html = read_html(url)
+  
 review_titles = dynamite_html %>%
   html_nodes("#cm_cr-review_list .review-title") %>%
   html_text()
@@ -210,7 +181,7 @@ review_stars = dynamite_html %>%
   html_text()
 
 review_text = dynamite_html %>%
-    html_nodes(".review-data:nth-child(4)") %>%
+    html_nodes(".review-text") %>%
     html_text()
 
 reviews = tibble(
@@ -218,11 +189,104 @@ reviews = tibble(
   stars = review_stars,
   text = review_text
 )
-  reviews
+
+}
+```
+
+```{r}
+x = read_reviews("https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1")
+```
+
+Multiple pages (Note there are better ways(loops or `maps`) to run this code, but this is for illustration)
+
+```{r}
+url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+
+vec_urls = str_c(url_base, 1:10)
+
+x = bind_rows(
+  read_reviews(vec_urls[1]),
+  read_reviews(vec_urls[2]),
+  read_reviews(vec_urls[3]),
+  read_reviews(vec_urls[4]),
+  read_reviews(vec_urls[5])
+)
+```
+
+Lord of the rings data
+```{r}
+fellowship_ring = readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") %>%
+  mutate(movie = "fellowship_ring")
+
+two_towers = readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") %>%
+  mutate(movie = "two_towers")
+
+return_king = readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") %>%
+  mutate(movie = "return_king")
+
+lotr_tidy = bind_rows(fellowship_ring, two_towers, return_king) %>%
+  janitor::clean_names() %>%
+  gather(key = sex, value = words, female:male) %>%
+  mutate(race = tolower(race)) %>% 
+  select(movie, everything()) 
+```
+
+We will use a function to recreate the data
+
+```{r}
+lotr_load_and_tidy = function(path, range, movie_name){
+  
+df = readxl::read_excel(path, range = range) %>%
+  janitor::clean_names() %>%
+  gather(key = sex, value = words, female:male) %>%
+  mutate(race = tolower(race),
+         movie = movie_name)
+
+df
+
+}
+
+lotr_tidy = 
+  bind_rows(
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "B3:D6", "fellowship_ring"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "F3:H6", "two_towers"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "J3:L6", "return_king")) %>%
+  select(movie, everything()) 
+```
+
+putting function in a function
+```{r}
+x = rnorm(25, 0, 1)
+
+my_summary = function(x, summ_func){
+  summ_func(x)
+}
+
+my_summary(x, sd)
+my_summary(x, IQR)
+```
+
+
+
+```{r}
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y)
+```
+
+```{r}
+mmm <- function(x) {
+  stopifnot(is.numeric(x))
+  max(x) - min(x)
 }
 
 ```
-
 
 
 
